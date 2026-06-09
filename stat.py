@@ -51,9 +51,9 @@ def run_stats(csv_path, ign_bound: bool):
 def main():
 
     ignore_bound = True
-    provinces = ['辽宁', '河南', '河北', '湖北', '湖南', '四川', '广东'] # '江苏'
+    provinces = ['辽宁', '河南', '河北', '湖北', '湖南', '四川', '广东', '广西'] # '江苏'
 
-    def draw_provice(ax: Axes, title: str, data):
+    def draw_provice(ax: Axes, title: str, data: dict):
         ax.bar(data['scores'], data['num_people'], width=1.0, color='#1f77b4', edgecolor='none')
         ax.set_title(title)
         ax.set_xlim(100, 700)
@@ -62,13 +62,16 @@ def main():
             f'均值：{data['mean']:.2f}',
             f'标准差：{data['standard']:.2f}',
             f'偏度：{data['skewness']:.2f}',
-            f'峰度：{data['kurtosis']:.2f}'
+            f'峰度：{data['kurtosis']:.2f}',
         ]
+        if data.get('description', None):
+            labels.append(f'注：{data['description']}')
+        
         label = "\n".join(labels)
         ax.set_xlabel(label)
 
 
-    fig, axs = plt.subplots(2, len(provinces), figsize=(16, 6))
+    fig, axs = plt.subplots(2, len(provinces) + 1, figsize=(16, 6))
     year = '2025'
     
     for i, p in enumerate(provinces):
@@ -79,7 +82,13 @@ def main():
         draw_provice(axs[0, i], f'{p}（物理类）', data_p)
         draw_provice(axs[1, i], f'{p}（历史类）', data_h)
 
-    fig.suptitle(f'{year}年部分省份高考成绩统计图\n制作：赤川鹤鸣_Channel')
+    # 特殊地区
+    data_beijing = run_stats(f'./data/北京_{year}.csv', ignore_bound)
+    data_beijing['description'] = '379分以下由中位值拟合'
+    draw_provice(axs[0, -1], f'北京', data_beijing)
+    provinces.append('北京')
+    
+    fig.suptitle(f'{year}年部分省市高考成绩统计图\n（{"、".join(provinces)}）\n制作：赤川鹤鸣_Channel')
     plt.tight_layout()
     plt.show()
 
