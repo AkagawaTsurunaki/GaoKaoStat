@@ -19,4 +19,3 @@ def gen_num_people_by_accum(csv_path):
 
     print('Sync num_people based on accumulate column.')
 
-gen_num_people_by_accum('./data/henan_2025_physics_scores.csv')
