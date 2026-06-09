@@ -51,7 +51,7 @@ def run_stats(csv_path, ign_bound: bool):
 def main():
 
     ignore_bound = True
-    provinces = ['辽宁', '河南', '河北', '湖北', '湖南', '四川', '广东', '广西'] # '江苏'
+    provinces = ['黑龙江', '吉林', '辽宁' ,'河南', '河北', '湖北', '湖南', '四川', '广东', '广西'] # '江苏'
 
     def draw_provice(ax: Axes, title: str, data: dict):
         ax.bar(data['scores'], data['num_people'], width=1.0, color='#1f77b4', edgecolor='none')

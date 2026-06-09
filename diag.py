@@ -18,4 +18,3 @@ def gen_num_people_by_accum(csv_path):
     df.to_csv(csv_path, index=False)
 
     print('Sync num_people based on accumulate column.')
-
