@@ -52,7 +52,7 @@ def run_stats(csv_path, ign_bound: bool):
 def main():
 
     ignore_bound = True
-    provinces = ['黑龙江', '吉林', '辽宁', '河南', '河北', '山西', '湖北',
+    provinces = ['黑龙江', '吉林', '辽宁', '内蒙古', '河南', '河北', '山西', '陕西', '湖北',
                  '湖南', '福建', '江西', '江苏', '四川', '重庆', '贵州', '广东', '广西']
 
     def draw_provice(ax: Axes, title: str, data: dict):

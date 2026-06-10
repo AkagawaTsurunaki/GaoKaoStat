@@ -13,7 +13,8 @@ def gen_num_people_by_accum(csv_path):
 
     assert np.sum(diff) == accumulate[-1]
     df['num_people'] = diff
-    df.to_csv(csv_path, index=False)
+    saved_path = rename(csv_path)
+    df.to_csv(saved_path, index=False)
 
     print('Sync num_people based on accumulate column.')
 
@@ -30,7 +31,10 @@ def fuse_junior_undergraduate(csv_path: str):
         
     df['accumulate'] = accumulate
     
-    splits = csv_path.split('.')
-    saved_path = splits[-2] + "_fused." + splits[-1]
-    
+    saved_path = rename(csv_path)
     df.to_csv(saved_path, index=False)
+
+def rename(path: str):
+    splits = path.split('.')
+    new_path = splits[-2] + "_fused." + splits[-1]
+    return new_path
