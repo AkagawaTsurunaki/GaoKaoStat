@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 
@@ -47,22 +49,31 @@ def get_num_people_from_accum(df):
 
 
 def validate_data(csv_path: str):
+    assert os.path.exists(csv_path), f'Path does not exist: {csv_path}'
     df = pd.read_csv(csv_path)
     num_people = np.array(df['num_people'].to_numpy())
     diff = get_num_people_from_accum(df)
     
     count = 0
+    err = 0
     
     for i in range(len(num_people)):
         if diff[i] != num_people[i]:
             print(f"At index {i}, inconsistency num_people ({num_people[i]}) should be {diff[i]} from accumulate.")
-        
+            err += 1
+        if num_people[i] < 0 or diff[i] < 0:
+            print(f"At index {i}, num_people < 0.")
+            err += 1
         count += 1
     
-    print(f"Validation success: {count} row(s) are checked.")
+    print(f"Validation: {count} row(s) are checked.")
+    if err == 0:
+        print(f'No problem.')
+    else:
+        print(f"{err} error(s) need to fix.")
         
 
-path = R'C:\Users\96514\Desktop\GaoKaoStat\data\宁夏_2025_历史类.txt'
+path = R'.\data\青海_2025_物理类.txt'
 # validate_data(path)
-sync_num_people_by_accum(path)
+# sync_num_people_by_accum(path)
 validate_data(path)

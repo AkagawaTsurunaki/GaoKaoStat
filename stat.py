@@ -52,14 +52,15 @@ def run_stats(csv_path, ign_bound: bool):
 def main():
 
     ignore_bound = True
-    provinces = ['黑龙江', '吉林', '辽宁', '内蒙古', '河南', '河北', '山西', '陕西', '湖北',
-                 '湖南', '福建', '江西', '江苏', '四川', '重庆', '贵州', '云南','广东', '广西']
+    provinces = ['黑龙江', '吉林', '辽宁', '内蒙古', '河南', '河北', '山西', '陕西', '宁夏', '青海', '湖北',
+                 '湖南', '福建', '江西', '江苏', '四川', '重庆', '贵州', '云南', '广东', '广西']
 
-    def draw_provice(ax: Axes, title: str, data: dict):
+    def draw_provice(ax: Axes, title: str, data: dict, color: str):
         ax.bar(data['scores'], data['num_people'],
-               width=1.0, color='#1f77b4', edgecolor='none')
+               width=1.0, color=color, edgecolor='none')
         ax.set_title(title)
         ax.set_xlim(100, 700)
+        ax.tick_params(axis='both', labelsize=8)
         # ax.text(0, 0.7, f'平均值：{data['mean']:.2f}', transform=ax.transAxes)
         labels = [
             f'均值：{data['mean']:.2f}',
@@ -71,9 +72,10 @@ def main():
             labels.append(f'注：{data['description']}')
 
         label = "\n".join(labels)
-        ax.set_xlabel(label)
+        ax.set_xlabel(label, fontsize=8)
 
-    fig, axs = plt.subplots(3, len(provinces), figsize=(16, 6))
+    axs_col = math.ceil(len(provinces) / 2)
+    fig, axs = plt.subplots(5, axs_col, figsize=(16, 12))
     year = '2025'
 
     for i, p in enumerate(provinces):
@@ -81,13 +83,16 @@ def main():
         file_h = f'./data/{p}_{year}_历史类.csv'
         data_p = run_stats(file_p, ignore_bound)
         data_h = run_stats(file_h, ignore_bound)
-        draw_provice(axs[0, i], f'{p}（物理类）', data_p)
-        draw_provice(axs[1, i], f'{p}（历史类）', data_h)
+
+        draw_provice(axs[i // axs_col, i % axs_col],
+                     f'{p}（物理类）', data_p, color='#1f77b4')
+        draw_provice(axs[i // axs_col + 2, i % axs_col],
+                     f'{p}（历史类）', data_h, color="#10910b")
 
     # 特殊地区
     data_beijing = run_stats(f'./data/北京_{year}.csv', ignore_bound)
     data_beijing['description'] = '379分以下由中位值拟合'
-    draw_provice(axs[2, 0], f'北京', data_beijing)
+    draw_provice(axs[4, 0], f'北京', data_beijing, color="#ee6d17")
     provinces.append('北京')
 
     fig.suptitle(
