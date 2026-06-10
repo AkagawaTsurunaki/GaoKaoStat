@@ -9,6 +9,7 @@ from scipy import stats
 plt.rcParams['font.family'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
+
 def run_stats(csv_path, ign_bound: bool):
     df = pd.read_csv(csv_path)
 
@@ -17,7 +18,7 @@ def run_stats(csv_path, ign_bound: bool):
 
     scores = np.array(scores.to_numpy())
     num_people = np.array(num_people.to_numpy())
-    
+
     if ign_bound:
         scores = scores[1:-1]
         num_people = num_people[1:-1]
@@ -51,10 +52,12 @@ def run_stats(csv_path, ign_bound: bool):
 def main():
 
     ignore_bound = True
-    provinces = ['黑龙江', '吉林', '辽宁' ,'河南', '河北', '湖北', '湖南', '四川', '广东', '广西'] # '江苏'
+    provinces = ['黑龙江', '吉林', '辽宁', '河南', '河北', '湖北',
+                 '湖南', '福建', '江西', '江苏', '四川', '重庆', '广东', '广西']
 
     def draw_provice(ax: Axes, title: str, data: dict):
-        ax.bar(data['scores'], data['num_people'], width=1.0, color='#1f77b4', edgecolor='none')
+        ax.bar(data['scores'], data['num_people'],
+               width=1.0, color='#1f77b4', edgecolor='none')
         ax.set_title(title)
         ax.set_xlim(100, 700)
         # ax.text(0, 0.7, f'平均值：{data['mean']:.2f}', transform=ax.transAxes)
@@ -66,14 +69,13 @@ def main():
         ]
         if data.get('description', None):
             labels.append(f'注：{data['description']}')
-        
+
         label = "\n".join(labels)
         ax.set_xlabel(label)
 
-
-    fig, axs = plt.subplots(2, len(provinces) + 1, figsize=(16, 6))
+    fig, axs = plt.subplots(3, len(provinces), figsize=(16, 6))
     year = '2025'
-    
+
     for i, p in enumerate(provinces):
         file_p = f'./data/{p}_{year}_物理类.csv'
         file_h = f'./data/{p}_{year}_历史类.csv'
@@ -85,10 +87,11 @@ def main():
     # 特殊地区
     data_beijing = run_stats(f'./data/北京_{year}.csv', ignore_bound)
     data_beijing['description'] = '379分以下由中位值拟合'
-    draw_provice(axs[0, -1], f'北京', data_beijing)
+    draw_provice(axs[2, 0], f'北京', data_beijing)
     provinces.append('北京')
-    
-    fig.suptitle(f'{year}年部分省市高考成绩统计图\n（{"、".join(provinces)}）\n制作：赤川鹤鸣_Channel')
+
+    fig.suptitle(
+        f'{year}年部分省市高考成绩统计图\n（{"、".join(provinces)}）\n注：数据已经去双尾极端值\n制作：赤川鹤鸣_Channel')
     plt.tight_layout()
     plt.show()
 
