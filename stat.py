@@ -53,7 +53,7 @@ def main():
 
     ignore_bound = True
     provinces = ['黑龙江', '吉林', '辽宁', '内蒙古', '河南', '河北', '山西', '陕西', '宁夏', '青海', '湖北',
-                 '湖南', '福建', '江西', '江苏', '四川', '重庆', '贵州', '云南', '广东', '广西']
+                 '湖南', '福建', '安徽', '江西', '江苏', '四川', '重庆', '贵州', '云南', '广东', '广西']
 
     def draw_provice(ax: Axes, title: str, data: dict, color: str):
         ax.bar(data['scores'], data['num_people'],
@@ -94,12 +94,32 @@ def main():
     data_beijing['description'] = '379分以下由中位值拟合'
     draw_provice(axs[4, 0], f'北京', data_beijing, color="#ee6d17")
     provinces.append('北京')
+    
+    data_hainan = run_stats(f'./data/海南_{year}.csv', ignore_bound)
+    draw_provice(axs[4, 1], f'海南', data_hainan, color="#ee6d17")
+    provinces.append('海南')
+    
+    data_shandong = run_stats(f'./data/山东_{year}.csv', ignore_bound)
+    draw_provice(axs[4, 2], f'山东', data_shandong, color="#ee6d17")
+    provinces.append('山东')
+
+    data_zhejiang= run_stats(f'./data/浙江_{year}.csv', ignore_bound)
+    draw_provice(axs[4, 3], f'浙江', data_zhejiang, color="#ee6d17")
+    provinces.append('浙江')
+    
+    data_tianjin= run_stats(f'./data/天津_{year}.csv', ignore_bound)
+    draw_provice(axs[4, 4], f'天津', data_tianjin, color="#ee6d17")
+    provinces.append('天津')
+    
+    data_shanghai= run_stats(f'./data/上海_{year}.csv', ignore_bound)
+    draw_provice(axs[4, 5], f'上海', data_shanghai, color="#ee6d17")
+    provinces.append('上海')
 
     fig.suptitle(
-        f'{year}年部分省市高考成绩统计图\n（{"、".join(provinces)}）\n注：数据已经去双尾极端值\n制作：赤川鹤鸣_Channel')
+        f'{year}年部分省市高考成绩统计图\n注：本统计仅覆盖中国大陆实施新高考改革的省份。不含西藏（数据未公布）、新疆（传统高考模式）及港澳台地区（制度差异）。\n制作：赤川鹤鸣_Channel')
     plt.tight_layout()
-    plt.show()
-
+    # plt.show()
+    plt.savefig('figure.svg', bbox_inches='tight')
 
 if __name__ == "__main__":
     main()

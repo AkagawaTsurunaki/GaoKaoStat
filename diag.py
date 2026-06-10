@@ -73,7 +73,7 @@ def validate_data(csv_path: str):
         print(f"{err} error(s) need to fix.")
         
 
-path = R'.\data\青海_2025_物理类.txt'
+path = R'.\data\天津_2025.csv'
 # validate_data(path)
 # sync_num_people_by_accum(path)
 validate_data(path)
