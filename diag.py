@@ -84,18 +84,27 @@ def validate_data(csv_path: str) -> bool:
     else:
         print(f"{err} error(s) need to fix.")
         return False
-        
-for dirpath, dirnames, filenames in os.walk('./data'):
-    for filename in filenames:
-        if filename.split('.')[-1].lower() == 'csv':
-            print("--------------")
-            path = os.path.join(dirpath, filename)
-            if not validate_data(path):
-                print(f'Path: {path}')
-                exit()
-            else:
-                print(f"Path: {path}")
-            print("--------------")
+
+def validate_truncate(csv_path):
+    df = pd.read_csv(csv_path)
+    score = df['score']
+    print(f"Max: {score.max()}, min: {score.min()}")
+
+def validate_all():
+    for dirpath, dirnames, filenames in os.walk('./data'):
+        for filename in filenames:
+            if filename.split('.')[-1].lower() == 'csv':
+                print("--------------")
+                path = os.path.join(dirpath, filename)
+                if not validate_data(path):
+                    print(f'Path: {path}')
+                    exit()
+                else:
+                    print(f"Path: {path}")
+                validate_truncate(path)
+                print("--------------")
+
+validate_all()
 # path = R'.\data\江苏_2025_历史类.csv'
 # validate_data(path)
 # sync_num_people_by_accum(path)
