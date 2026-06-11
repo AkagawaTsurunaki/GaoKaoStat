@@ -40,26 +40,37 @@ def rename(path: str):
 
 def get_num_people_from_accum(df):
     accumulate = df['accumulate']
-    accumulate = np.array(accumulate.to_numpy())
+    accumulate = np.array(accumulate, dtype=int)
     accumulate = np.concat([[0], accumulate])
 
     diff = np.diff(accumulate, 1)
-    assert np.sum(diff) == accumulate[-1]
+    total = np.sum(diff)
+    assert total == accumulate[-1], f'np.sum(diff) = {total}, while accumulate[-1] = {accumulate[-1]}'
     return diff
 
 
-def validate_data(csv_path: str):
+def validate_data(csv_path: str) -> bool:
     assert os.path.exists(csv_path), f'Path does not exist: {csv_path}'
     df = pd.read_csv(csv_path)
-    num_people = np.array(df['num_people'].to_numpy())
+    num_people = np.array(df['num_people'].to_numpy(), dtype=int)
+    scores = np.array(df['score'].to_numpy(), dtype=int)
     diff = get_num_people_from_accum(df)
     
+    if np.isnan(num_people.any()):
+        print("num_people has nan value.")
+        return False
+    if np.isnan(scores.any()):
+        print("scores has nan value.")
+        return False
+    if np.isnan(diff.any()):
+        print("diff has nan value.")
+        return False
     count = 0
     err = 0
     
     for i in range(len(num_people)):
         if diff[i] != num_people[i]:
-            print(f"At index {i}, inconsistency num_people ({num_people[i]}) should be {diff[i]} from accumulate.")
+            print(f"At score {scores[i]}, inconsistency num_people ({num_people[i]}) should be {diff[i]} from accumulate.")
             err += 1
         if num_people[i] < 0 or diff[i] < 0:
             print(f"At index {i}, num_people < 0.")
@@ -69,11 +80,23 @@ def validate_data(csv_path: str):
     print(f"Validation: {count} row(s) are checked.")
     if err == 0:
         print(f'No problem.')
+        return True
     else:
         print(f"{err} error(s) need to fix.")
+        return False
         
-
-path = R'.\data\天津_2025.csv'
+for dirpath, dirnames, filenames in os.walk('./data'):
+    for filename in filenames:
+        if filename.split('.')[-1].lower() == 'csv':
+            print("--------------")
+            path = os.path.join(dirpath, filename)
+            if not validate_data(path):
+                print(f'Path: {path}')
+                exit()
+            else:
+                print(f"Path: {path}")
+            print("--------------")
+# path = R'.\data\江苏_2025_历史类.csv'
 # validate_data(path)
 # sync_num_people_by_accum(path)
-validate_data(path)
+# validate_data(path)
