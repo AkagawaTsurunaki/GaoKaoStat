@@ -119,7 +119,7 @@ def main():
         f'{year}年部分省市高考成绩统计图\n注：本统计仅覆盖中国大陆实施新高考改革的省份。不含西藏（数据未公布）、新疆（传统高考模式）及港澳台地区（制度差异）。\n制作：赤川鹤鸣_Channel')
     plt.tight_layout()
     # plt.show()
-    plt.savefig('figure.svg', bbox_inches='tight')
+    plt.savefig('figure.png', dpi=300, bbox_inches='tight')
 
 if __name__ == "__main__":
     main()
