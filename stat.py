@@ -1,9 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 import math
 from pathlib import Path
 import time
-from traceback import print_tb
 from typing import List
 import pandas as pd
 import numpy as np
@@ -36,12 +34,9 @@ def bowley_skewness(data):
 
 def run_stats(csv_path: Path, ign_bound: bool = True):
     df = pd.read_csv(csv_path)
-
-    scores = df['score']
-    num_people = df['num_people']
-
-    scores = np.array(scores.to_numpy())
-    num_people = np.array(num_people.to_numpy())
+    scores = np.array(df['score'].to_numpy())
+    num_people = np.array(df['num_people'].to_numpy())
+    accumulate = np.array(df['accumulate'].to_numpy())
 
     if ign_bound:
         scores = scores[1:-1]
@@ -66,7 +61,7 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
         subject=subject,
         scores=scores,
         num_people=num_people,
-        total=int(np.sum(num_people)),
+        total=int(accumulate[-1]),
         mean=mean,
         standard=math.sqrt(var),
         variance=var,
@@ -77,9 +72,11 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
 
 
 def run_stat_tasks(path_list: List[Path]):
+    result = []
     start = time.time()
-    with ProcessPoolExecutor(max_workers=20) as exec:
-        result = list(exec.map(run_stats, path_list))
+    for path in path_list:
+        data = run_stats(path)
+        result.append(data)
     end = time.time()
     print(f"Use {end - start:.2f} seconds")
     return result
