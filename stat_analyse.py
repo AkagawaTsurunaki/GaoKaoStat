@@ -1,8 +1,11 @@
+import concurrent
+import concurrent.futures
 from dataclasses import dataclass
 import math
+import multiprocessing
 from pathlib import Path
 import time
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import pandas as pd
 import numpy as np
 from scipy import stats
@@ -27,9 +30,23 @@ class ScoreStat:
     kurtosis: float
     abci: int  # 本人提出的“绝对独木桥指标”/“一分千人指标”，提高一分，干掉千人，即一分一段表中超过1000人的分数线有多少个。
     bci: int
+    cvm: float  # Cramér–von Mises 统计量，不用 Anderson–Darling 因为它的权重在尾部很敏感
+    cvm_p_value: float  # 这个统计量的 p 值，用于假设检验的
     levelA: int | None
     levelB: int | None
     description: str | None
+
+
+def cramer_von_mises_statistic(data: np.ndarray):
+
+    result = stats.goodness_of_fit(
+        dist=stats.truncnorm,
+        data=data,
+        statistic='cvm',
+        n_mc_samples=800,
+        # known_params={'a': data.min(), 'b': data.max()},
+    )
+    return result
 
 
 def bowley_skewness(data):
@@ -40,7 +57,9 @@ def bowley_skewness(data):
     return s_q
 
 
-def run_stats(csv_path: Path, ign_bound: bool = True):
+def run_stats(csv_path: Union[Path, str], ign_bound: bool = True):
+    print(f"Processing: {csv_path}")
+    csv_path = Path(csv_path)
     df = pd.read_csv(csv_path)
     scores = np.array(df['score'].to_numpy())
     num_people = np.array(df['num_people'].to_numpy())
@@ -64,6 +83,8 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
     splits = csv_path.stem.split("_")
     province, year = splits[0], int(splits[1])
     subject = splits[2]if len(splits) >= 3 else None
+
+    cvm = cramer_von_mises_statistic(full_data)
 
     # 某些省份不分文理科，本科线专科线
     score_lines = SCORE_LINE
@@ -95,6 +116,8 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
         kurtosis=kurt,
         abci=int(abci),
         bci=int(bci),
+        cvm=cvm.statistic,
+        cvm_p_value=cvm.pvalue,
         description=desc
     )
 
@@ -181,7 +204,7 @@ def compare_other_index(stat_list: List[ScoreStat]):
 
 def compare_moment(stat_list: List[ScoreStat]):
     phy, his, _ = group_by_subject_sort_by_province(stat_list)
-    
+
     # 按照平均值排序
     phy_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
     his_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
@@ -192,7 +215,7 @@ def compare_moment(stat_list: List[ScoreStat]):
     print('\n------均值排行（历史类）------')
     for i, data in enumerate(his_mean):
         print(f'{i+1} {data.province}  {data.mean:.4f}')
-    
+
     # 按普通偏度排序
     phy_std = sorted(phy, key=lambda s: s.standard, reverse=True)
     his_std = sorted(his, key=lambda s: s.standard, reverse=True)
@@ -242,6 +265,26 @@ def compare_moment(stat_list: List[ScoreStat]):
         print(f'{i+1} {data.province}  {data.kurtosis:.4f}')
 
 
+def comapre_cvm(stat_list: List[ScoreStat]):
+    phy, his, other = group_by_subject_sort_by_province(stat_list)
+
+    phy = sorted(phy, key=lambda s: s.cvm_p_value, reverse=True)
+    his = sorted(his, key=lambda s: s.cvm_p_value, reverse=True)
+    other = sorted(other, key=lambda s: s.cvm_p_value, reverse=True)
+
+    for i, data in enumerate(phy):
+        print(
+            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+
+    for i, data in enumerate(his):
+        print(
+            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+
+    for i, data in enumerate(other):
+        print(
+            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+
+
 def run_stat_tasks(path_list: List[Path]):
     result = []
     start = time.time()
@@ -251,3 +294,13 @@ def run_stat_tasks(path_list: List[Path]):
     end = time.time()
     print(f"Use {end - start:.2f} seconds")
     return result
+
+
+def run_stat_tasks_with_multiprocess(path_list: List[Path]):
+    start = time.time()
+    args = [str(path) for path in path_list]
+    with concurrent.futures.ProcessPoolExecutor(1) as pool:
+        result = list(pool.map(run_stats, args))
+        end = time.time()
+        print(f"Use {end - start:.2f} seconds")
+        return result
