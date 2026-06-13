@@ -19,6 +19,7 @@ class ScoreStat:
     num_people: np.ndarray
     total: int
     mean: float
+    median: float
     standard: float
     variance: float
     skewness: float
@@ -56,6 +57,7 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
     kurt = stats.kurtosis(full_data, fisher=True, bias=False)
     var = full_data.var()
     mean = full_data.mean()
+    median = np.median(full_data)
     abci = np.count_nonzero(num_people >= 1000)
     bci = np.count_nonzero(num_people >= total * 0.001)
 
@@ -69,7 +71,7 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
     ) else None
     levelB = score_lines[province][subject]['专科线'] if province in score_lines.keys(
     ) else None
-    
+
     # 对数据的额外描述注释
     desc = DESCRIPTION.get(province, None)
 
@@ -85,6 +87,7 @@ def run_stats(csv_path: Path, ign_bound: bool = True):
         num_people=num_people,
         total=total,
         mean=mean,
+        median=median,
         standard=math.sqrt(var),
         variance=var,
         skewness=skew,
@@ -132,7 +135,7 @@ def compare_phyhis_ratio(stat_list: List[ScoreStat]):
     for i, data in enumerate(result):
         print(f'{i+1} {data["province"]}  {data['ratio']}')
 
-    sum_delta = sum([r['delta'] for r in result]) 
+    sum_delta = sum([r['delta'] for r in result])
     print(f"总多出: {sum_delta}")
 
 
@@ -150,10 +153,10 @@ def compare_other_index(stat_list: List[ScoreStat]):
         reverse=True
     )
 
-    print(R'------绝对独木桥指标排行（物理类）------')
+    print(R'------绝对“一分千人”指标排行（物理类）------')
     for i, data in enumerate(phy_bci):
         print(f'{i+1} {data.province}  {data.abci} {data.total}')
-    print(R'------绝对独木桥指标排行（历史类）------')
+    print(R'------绝对“一分千人”指标排行（历史类）------')
     for i, data in enumerate(his_bci):
         print(f'{i+1} {data.province}  {data.abci} {data.total}')
 
@@ -168,12 +171,75 @@ def compare_other_index(stat_list: List[ScoreStat]):
         reverse=True
     )
 
-    print('------0.1% 相对独木桥指标排行（物理类）------')
+    print('------0.1% “一分千人”指标排行（物理类）------')
     for i, data in enumerate(phy_bci):
         print(f'{i+1} {data.province}  {data.bci}')
-    print('------0.1% 相对独木桥指标排行（历史类）------')
+    print('------0.1% “一分千人”桥指标排行（历史类）------')
     for i, data in enumerate(his_bci):
         print(f'{i+1} {data.province}  {data.bci}')
+
+
+def compare_moment(stat_list: List[ScoreStat]):
+    phy, his, _ = group_by_subject_sort_by_province(stat_list)
+    
+    # 按照平均值排序
+    phy_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
+    his_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
+    print('------均值排行（物理类）------')
+    for i, data in enumerate(phy_mean):
+        print(f'{i+1} {data.province}  {data.mean:.4f}')
+
+    print('\n------均值排行（历史类）------')
+    for i, data in enumerate(his_mean):
+        print(f'{i+1} {data.province}  {data.mean:.4f}')
+    
+    # 按普通偏度排序
+    phy_std = sorted(phy, key=lambda s: s.standard, reverse=True)
+    his_std = sorted(his, key=lambda s: s.standard, reverse=True)
+
+    print('------标准差排行（物理类）------')
+    for i, data in enumerate(phy_std):
+        print(f'{i+1} {data.province}  {data.standard:.4f}')
+
+    print('\n------标准差排行（历史类）------')
+    for i, data in enumerate(his_std):
+        print(f'{i+1} {data.province}  {data.standard:.4f}')
+
+    # 按普通偏度排序
+    phy_skew = sorted(phy, key=lambda s: s.skewness, reverse=False)
+    his_skew = sorted(his, key=lambda s: s.skewness, reverse=False)
+
+    print('------普通偏度排行（物理类）------')
+    for i, data in enumerate(phy_skew):
+        print(f'{i+1} {data.province}  {data.skewness:.4f}')
+
+    print('\n------普通偏度排行（历史类）------')
+    for i, data in enumerate(his_skew):
+        print(f'{i+1} {data.province}  {data.skewness:.4f}')
+
+    # 按鲍利偏度排序
+    phy_bowley = sorted(phy, key=lambda s: s.bowley_skewness, reverse=False)
+    his_bowley = sorted(his, key=lambda s: s.bowley_skewness, reverse=False)
+
+    print('\n------鲍利偏度排行（物理类）------')
+    for i, data in enumerate(phy_bowley):
+        print(f'{i+1} {data.province}  {data.bowley_skewness:.4f}')
+
+    print('\n------鲍利偏度排行（历史类）------')
+    for i, data in enumerate(his_bowley):
+        print(f'{i+1} {data.province}  {data.bowley_skewness:.4f}')
+
+    # 按峰度排序
+    phy_kurt = sorted(phy, key=lambda s: s.kurtosis, reverse=True)
+    his_kurt = sorted(his, key=lambda s: s.kurtosis, reverse=True)
+
+    print('\n------峰度排行（物理类）------')
+    for i, data in enumerate(phy_kurt):
+        print(f'{i+1} {data.province}  {data.kurtosis:.4f}')
+
+    print('\n------峰度排行（历史类）------')
+    for i, data in enumerate(his_kurt):
+        print(f'{i+1} {data.province}  {data.kurtosis:.4f}')
 
 
 def run_stat_tasks(path_list: List[Path]):
