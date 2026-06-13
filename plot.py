@@ -68,8 +68,6 @@ def draw_dist_plot(data_list: List[ScoreStat]):
     print(f"Used {end - start:.2f} seconds")
 
 # x軸是本科线-均值差，y軸是本科线-专科线
-
-
 def draw_scatter_plot(data_list: List[ScoreStat]):
     phy, his, other = group_by_subject_sort_by_province(data_list)
     point_size = 300
@@ -77,7 +75,7 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
     x_arr_p, y_arr_p, s_arr_p = [], [], []
     for p in phy:
         assert p.levelA and p.levelB
-        x = p.levelA - p.mean
+        x = p.levelA - p.median
         x_arr_p.append(x)
         y = p.levelA - p.levelB
         y_arr_p.append(y)
@@ -88,13 +86,13 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
     s_arr_p = s_arr_p / factor * point_size
     plt.scatter(x_arr_p, y_arr_p, s_arr_p, color=COLOR_PHYSICS, label="物理类")
     plt.axvline(0,  color="#2e2e2e", linewidth=0.8)
-    plt.xlabel('本科线与均值之差 (本科线 - 均值)')
+    plt.xlabel('本科线与均值之差 (本科线 - 中位数)')
     plt.ylabel('本科线与专科线之差 (本科线 - 专科线)')
 
     x_arr_h, y_arr_h, s_arr_h = [], [], []
     for h in his:
         assert h.levelA and h.levelB
-        x = h.levelA - h.mean
+        x = h.levelA - h.median
         x_arr_h.append(x)
         y = h.levelA - h.levelB
         y_arr_h.append(y)
@@ -121,7 +119,7 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
     print([p.province for p in phy])
     print(xuefeng)
         
-    plt.title('部分省市本科线、专科线、平均分数线的偏离度分析\n'
+    plt.title('部分省市本科线、专科线、中位数的偏离度分析——雪峰效应\n'
               '注: 气泡大小表示考生人数的多少; 横坐标表示本科线与平均值之间的区间有多大, 纵坐标表示本科线和专科线之间的区间有多大\n'
               '制作: 赤川鹤鸣_Channel')
     plt.legend()
