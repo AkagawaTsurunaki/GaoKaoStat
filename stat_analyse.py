@@ -37,23 +37,32 @@ class ScoreStat:
     description: str | None
 
 
-def cramer_von_mises_statistic(data: np.ndarray):
-
-    result = stats.goodness_of_fit(
-        dist=stats.truncnorm,
-        data=data,
-        statistic='cvm',
-        n_mc_samples=800,
-        # known_params={'a': data.min(), 'b': data.max()},
-    )
-    return result
+def cramer_von_mises_statistic(data: np.ndarray, lower=0, upper=750):
+    # rng = np.random.default_rng()
+    # if data.size > 50_000:
+    #     data = rng.choice(data, size=50_000, replace=False)
+    #
+    # loc_hat = np.mean(data)
+    # scale_hat = np.std(data, ddof=1)
+    #
+    # a = (lower - loc_hat) / scale_hat
+    # b = (upper - loc_hat) / scale_hat
+    #
+    # result = stats.goodness_of_fit(
+    #     dist=stats.truncnorm,
+    #     data=data,
+    #     statistic='cvm',
+    #     n_mc_samples=999,          # 999 次模拟已足够稳定，显著提速
+    #     known_params={'a': a, 'b': b},  # 截尾点固定，只估计 loc/scale
+    # )
+    return 0, 0
 
 
 def bowley_skewness(data):
     q1 = np.percentile(data, 25, method='midpoint')
     q2 = np.percentile(data, 50, method='midpoint')
     q3 = np.percentile(data, 75, method='midpoint')
-    s_q = (q3+q1-2*q2)/(q3-q1)
+    s_q = (q3 + q1 - 2 * q2) / (q3 - q1)
     return s_q
 
 
@@ -82,9 +91,16 @@ def run_stats(csv_path: Union[Path, str], ign_bound: bool = True):
 
     splits = csv_path.stem.split("_")
     province, year = splits[0], int(splits[1])
-    subject = splits[2]if len(splits) >= 3 else None
+    subject = splits[2] if len(splits) >= 3 else None
 
-    cvm = cramer_von_mises_statistic(full_data)
+    # 上海高考 (0~660)，海南高考 (100~900)
+    if province == '上海':
+        lower, upper = 0, 660
+    elif province == '海南':
+        lower, upper = 100, 900
+    else:
+        lower, upper = 0, 750
+    # cvm = cramer_von_mises_statistic(full_data,lower, upper)
 
     # 某些省份不分文理科，本科线专科线
     score_lines = SCORE_LINE
@@ -116,13 +132,14 @@ def run_stats(csv_path: Union[Path, str], ign_bound: bool = True):
         kurtosis=kurt,
         abci=int(abci),
         bci=int(bci),
-        cvm=cvm.statistic,
-        cvm_p_value=cvm.pvalue,
+        cvm=0,
+        cvm_p_value=0,
         description=desc
     )
 
 
-def group_by_subject_sort_by_province(stat_list: List[ScoreStat]) -> Tuple[List[ScoreStat], List[ScoreStat], List[ScoreStat]]:
+def group_by_subject_sort_by_province(stat_list: List[ScoreStat]) -> Tuple[
+    List[ScoreStat], List[ScoreStat], List[ScoreStat]]:
     phy, his, other = [], [], []
     for data in stat_list:
         if data.subject == "物理类":
@@ -137,10 +154,8 @@ def group_by_subject_sort_by_province(stat_list: List[ScoreStat]) -> Tuple[List[
     return phy, his, other
 
 
-def compare_phyhis_ratio(stat_list: List[ScoreStat]):
-    phy, his, _ = group_by_subject_sort_by_province(stat_list)
-    print([p.province for p in phy])
-    print([p.province for p in his])
+def compare_num_people(stat_list: List[ScoreStat]):
+    phy, his, other = group_by_subject_sort_by_province(stat_list)
 
     result = []
     for p, h in zip(phy, his):
@@ -156,11 +171,28 @@ def compare_phyhis_ratio(stat_list: List[ScoreStat]):
 
     print('------物理/历史人数比------')
     for i, data in enumerate(result):
-        print(f'{i+1} {data["province"]}  {data['ratio']}')
+        print(f'{i + 1} {data["province"]}  {data['ratio']}')
 
     sum_delta = sum([r['delta'] for r in result])
     print(f"总多出: {sum_delta}")
 
+    phy = sorted(phy, key=lambda x: x.total, reverse=True)
+    his = sorted(his, key=lambda x: x.total, reverse=True)
+    other = sorted(other, key=lambda x: x.total, reverse=True)
+
+    print('------物理人数------')
+    for i, data in enumerate(phy):
+        print(f'{i + 1} {data.province} {data.total}')
+
+    print('------历史人数------')
+    for i, data in enumerate(his):
+        print(f'{i + 1} {data.province} {data.total}')
+    print('------其他人数------')
+    for i, data in enumerate(other):
+        print(f'{i + 1} {data.province} {data.total}')
+
+    total = sum([data.total for data in stat_list])
+    print(f'所有省市的总人数：{total}')
 
 def compare_other_index(stat_list: List[ScoreStat]):
     phy, his, _ = group_by_subject_sort_by_province(stat_list)
@@ -178,10 +210,10 @@ def compare_other_index(stat_list: List[ScoreStat]):
 
     print(R'------绝对“一分千人”指标排行（物理类）------')
     for i, data in enumerate(phy_bci):
-        print(f'{i+1} {data.province}  {data.abci} {data.total}')
+        print(f'{i + 1} {data.province}  {data.abci} {data.total}')
     print(R'------绝对“一分千人”指标排行（历史类）------')
     for i, data in enumerate(his_bci):
-        print(f'{i+1} {data.province}  {data.abci} {data.total}')
+        print(f'{i + 1} {data.province}  {data.abci} {data.total}')
 
     phy_bci = sorted(
         phy,
@@ -196,10 +228,10 @@ def compare_other_index(stat_list: List[ScoreStat]):
 
     print('------0.1% “一分千人”指标排行（物理类）------')
     for i, data in enumerate(phy_bci):
-        print(f'{i+1} {data.province}  {data.bci}')
+        print(f'{i + 1} {data.province}  {data.bci}')
     print('------0.1% “一分千人”桥指标排行（历史类）------')
     for i, data in enumerate(his_bci):
-        print(f'{i+1} {data.province}  {data.bci}')
+        print(f'{i + 1} {data.province}  {data.bci}')
 
 
 def compare_moment(stat_list: List[ScoreStat]):
@@ -210,11 +242,11 @@ def compare_moment(stat_list: List[ScoreStat]):
     his_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
     print('------均值排行（物理类）------')
     for i, data in enumerate(phy_mean):
-        print(f'{i+1} {data.province}  {data.mean:.4f}')
+        print(f'{i + 1} {data.province}  {data.mean:.4f}')
 
     print('\n------均值排行（历史类）------')
     for i, data in enumerate(his_mean):
-        print(f'{i+1} {data.province}  {data.mean:.4f}')
+        print(f'{i + 1} {data.province}  {data.mean:.4f}')
 
     # 按普通偏度排序
     phy_std = sorted(phy, key=lambda s: s.standard, reverse=True)
@@ -222,11 +254,11 @@ def compare_moment(stat_list: List[ScoreStat]):
 
     print('------标准差排行（物理类）------')
     for i, data in enumerate(phy_std):
-        print(f'{i+1} {data.province}  {data.standard:.4f}')
+        print(f'{i + 1} {data.province}  {data.standard:.4f}')
 
     print('\n------标准差排行（历史类）------')
     for i, data in enumerate(his_std):
-        print(f'{i+1} {data.province}  {data.standard:.4f}')
+        print(f'{i + 1} {data.province}  {data.standard:.4f}')
 
     # 按普通偏度排序
     phy_skew = sorted(phy, key=lambda s: s.skewness, reverse=False)
@@ -234,11 +266,11 @@ def compare_moment(stat_list: List[ScoreStat]):
 
     print('------普通偏度排行（物理类）------')
     for i, data in enumerate(phy_skew):
-        print(f'{i+1} {data.province}  {data.skewness:.4f}')
+        print(f'{i + 1} {data.province}  {data.skewness:.4f}')
 
     print('\n------普通偏度排行（历史类）------')
     for i, data in enumerate(his_skew):
-        print(f'{i+1} {data.province}  {data.skewness:.4f}')
+        print(f'{i + 1} {data.province}  {data.skewness:.4f}')
 
     # 按鲍利偏度排序
     phy_bowley = sorted(phy, key=lambda s: s.bowley_skewness, reverse=False)
@@ -246,11 +278,11 @@ def compare_moment(stat_list: List[ScoreStat]):
 
     print('\n------鲍利偏度排行（物理类）------')
     for i, data in enumerate(phy_bowley):
-        print(f'{i+1} {data.province}  {data.bowley_skewness:.4f}')
+        print(f'{i + 1} {data.province}  {data.bowley_skewness:.4f}')
 
     print('\n------鲍利偏度排行（历史类）------')
     for i, data in enumerate(his_bowley):
-        print(f'{i+1} {data.province}  {data.bowley_skewness:.4f}')
+        print(f'{i + 1} {data.province}  {data.bowley_skewness:.4f}')
 
     # 按峰度排序
     phy_kurt = sorted(phy, key=lambda s: s.kurtosis, reverse=True)
@@ -258,11 +290,11 @@ def compare_moment(stat_list: List[ScoreStat]):
 
     print('\n------峰度排行（物理类）------')
     for i, data in enumerate(phy_kurt):
-        print(f'{i+1} {data.province}  {data.kurtosis:.4f}')
+        print(f'{i + 1} {data.province}  {data.kurtosis:.4f}')
 
     print('\n------峰度排行（历史类）------')
     for i, data in enumerate(his_kurt):
-        print(f'{i+1} {data.province}  {data.kurtosis:.4f}')
+        print(f'{i + 1} {data.province}  {data.kurtosis:.4f}')
 
 
 def comapre_cvm(stat_list: List[ScoreStat]):
@@ -274,15 +306,15 @@ def comapre_cvm(stat_list: List[ScoreStat]):
 
     for i, data in enumerate(phy):
         print(
-            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
 
     for i, data in enumerate(his):
         print(
-            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
 
     for i, data in enumerate(other):
         print(
-            f'{i+1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
+            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
 
 
 def run_stat_tasks(path_list: List[Path]):
@@ -299,7 +331,7 @@ def run_stat_tasks(path_list: List[Path]):
 def run_stat_tasks_with_multiprocess(path_list: List[Path]):
     start = time.time()
     args = [str(path) for path in path_list]
-    with concurrent.futures.ProcessPoolExecutor(1) as pool:
+    with concurrent.futures.ProcessPoolExecutor(10) as pool:
         result = list(pool.map(run_stats, args))
         end = time.time()
         print(f"Use {end - start:.2f} seconds")

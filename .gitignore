@@ -11,3 +11,4 @@ wheels/
 
 /.data_source
 *.png
+/.idea

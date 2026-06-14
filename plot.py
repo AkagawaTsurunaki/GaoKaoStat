@@ -2,17 +2,19 @@ import math
 import time
 from typing import List
 
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, ticker
 from matplotlib.axes import Axes
 import numpy as np
 
 from stat_analyse import ScoreStat, group_by_subject_sort_by_province
+plt.rcParams['font.family'] = ['SimHei', 'Noto Sans CJK JP', 'Noto Sans', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
 COLOR_PHYSICS = "#0095ff"
 COLOR_HISTORY = '#ff6600'
 COLOR_OTHER = '#10910b'
 
-def draw_distribute(ax: Axes, data: ScoreStat, color: str):
+def draw_distribute(ax: Axes, data: ScoreStat, color: str, show_score_lines: bool = False):
     ax.bar(data.scores, data.num_people,
            width=1.0, color=color, edgecolor='none')
     if data.subject:
@@ -20,14 +22,18 @@ def draw_distribute(ax: Axes, data: ScoreStat, color: str):
     else:
         title = data.province
     ax.set_title(title)
-    ax.set_xlim(0, 800)
+    upper = 900 if data.province == '海南' else 750
+    lower = 100 if data.province  == '海南' else 0
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(200))
+    ax.set_xlim(lower, upper)
     ax.tick_params(axis='both', labelsize=8)
-    if data.levelA and data.levelB:
-        ax.axvline(data.levelA, color='red', linestyle='--',
-                   linewidth=0.8)
-        ax.axvline(data.levelB, color='blue', linestyle='--',
-                   linewidth=0.8)
-    ax.axvline(data.mean, color='orange', linestyle='--', linewidth=0.8)
+    if show_score_lines:
+        if data.levelA and data.levelB:
+            ax.axvline(data.levelA, color='red', linestyle='--',
+                       linewidth=0.8)
+            ax.axvline(data.levelB, color='blue', linestyle='--',
+                       linewidth=0.8)
+        ax.axvline(data.mean, color='orange', linestyle='--', linewidth=0.8)
     labels = [
         f'均值: {data.mean:.2f}',
         f'标准差: {data.standard:.2f}',
@@ -40,6 +46,12 @@ def draw_distribute(ax: Axes, data: ScoreStat, color: str):
     label = "\n".join(labels)
     ax.set_xlabel(label, fontsize=8)
 
+def draw_single(data: ScoreStat):
+    fig, axs = plt.subplots(1, 1, figsize=(16, 12))
+    draw_distribute(axs, data, COLOR_OTHER)
+    plt.savefig(f'1.png', dpi=1200, bbox_inches='tight')
+    plt.tight_layout()
+    plt.close()
 
 def draw_dist_plot(data_list: List[ScoreStat]):
     start = time.time()
@@ -62,7 +74,7 @@ def draw_dist_plot(data_list: List[ScoreStat]):
         '制作：赤川鹤鸣_Channel')
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f'{title}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{title}.png', dpi=1200, bbox_inches='tight')
     plt.close()
     end = time.time()
     print(f"Used {end - start:.2f} seconds")
