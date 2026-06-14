@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 import numpy as np
 
 from stat_analyse import ScoreStat, group_by_subject_sort_by_province
-plt.rcParams['font.family'] = ['SimHei', 'Noto Sans CJK JP', 'Noto Sans', 'DejaVu Sans']
+plt.rcParams['font.family'] = ["DingTalk JinBuTi"] #, 'SimHei', 'Noto Sans CJK JP', 'Noto Sans', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 COLOR_PHYSICS = "#0095ff"
@@ -81,6 +81,7 @@ def draw_dist_plot(data_list: List[ScoreStat]):
 
 # x軸是本科线-均值差，y軸是本科线-专科线
 def draw_scatter_plot(data_list: List[ScoreStat]):
+    fig, ax = plt.subplots(figsize=(10, 9))
     phy, his, other = group_by_subject_sort_by_province(data_list)
     point_size = 300
 
@@ -96,10 +97,10 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
     s_arr_p = np.array(s_arr_p)
     factor = max(s_arr_p)
     s_arr_p = s_arr_p / factor * point_size
-    plt.scatter(x_arr_p, y_arr_p, s_arr_p, color=COLOR_PHYSICS, label="物理类")
-    plt.axvline(0,  color="#2e2e2e", linewidth=0.8)
-    plt.xlabel('本科线与均值之差 (本科线 - 中位数)')
-    plt.ylabel('本科线与专科线之差 (本科线 - 专科线)')
+    ax.scatter(x_arr_p, y_arr_p, s_arr_p, color=COLOR_PHYSICS, label="物理类")
+    ax.axvline(0,  color="#2e2e2e", linewidth=0.8)
+    ax.set_xlabel('本科线与均值之差 (本科线 - 中位数)')
+    ax.set_ylabel('本科线与专科线之差 (本科线 - 专科线)')
 
     x_arr_h, y_arr_h, s_arr_h = [], [], []
     for h in his:
@@ -111,19 +112,19 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
         s_arr_h.append(h.total)
     s_arr_h = np.array(s_arr_h)
     s_arr_h = s_arr_h / factor * point_size
-    plt.scatter(x_arr_h, y_arr_h, s_arr_h, color=COLOR_HISTORY, label="历史类")
+    ax.scatter(x_arr_h, y_arr_h, s_arr_h, color=COLOR_HISTORY, label="历史类")
     offset = (1, 1)
 
     # 连接各省物理历史的那条线
     for i in range(len(phy)):
-        plt.plot([x_arr_p[i], x_arr_h[i]], [y_arr_p[i], y_arr_h[i]],
+        ax.plot([x_arr_p[i], x_arr_h[i]], [y_arr_p[i], y_arr_h[i]],
                  color="#acacac", alpha=0.5, linewidth=0.8)
 
     # 物理/历史画圆点
     for i, p in enumerate(phy):
-        plt.annotate(p.province, (x_arr_p[i], y_arr_p[i]))
+        ax.annotate(p.province, (x_arr_p[i], y_arr_p[i]))
     for i, h in enumerate(his):
-        plt.annotate(h.province, (x_arr_h[i], y_arr_h[i]))
+        ax.annotate(h.province, (x_arr_h[i], y_arr_h[i]))
         
     delta_y = np.array(y_arr_h) - np.array(y_arr_p) 
     delta_x = np.array(x_arr_h) - np.array(x_arr_p)
@@ -131,9 +132,11 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
     print([p.province for p in phy])
     print(xuefeng)
         
-    plt.title('部分省市本科线、专科线、中位数的偏离度分析——雪峰效应\n'
+    ax.set_title('2025年部分省市高考本科线、专科线、中位数的偏离度分析——雪峰效应\n'
               '注: 气泡大小表示考生人数的多少; 横坐标表示本科线与平均值之间的区间有多大, 纵坐标表示本科线和专科线之间的区间有多大\n'
               '制作: 赤川鹤鸣_Channel')
-    plt.legend()
-    plt.show()
+    ax.legend()
+    # plt.show()
+    title = "2025年部分省市高考本科线、专科线、中位数的偏离度分析"
+    plt.savefig(f'{title}.png', dpi=1200, bbox_inches='tight')
     plt.close()
