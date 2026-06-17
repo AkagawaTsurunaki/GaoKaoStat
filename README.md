@@ -2,11 +2,13 @@
 
 对中国部分省市高考成绩数据的一些分析，包含程序源代码和高考数据。
 
-分析内容包括，总人数、物理/历史考生占比，平均数、方差、偏度、峰度等，并以统计图和散点图的形式呈现。
+分析内容包括：总人数、物理/历史考生占比，平均数、方差、偏度、峰度等，并以统计图和散点图的形式呈现。
 
-你可以运行程序自己生成，也可以直接用我们生成好的图片，引用时请标明原作者。
+你可以运行程序自己生成，也可以直接用生成好的图片，引用时请标明原作者。
 
-原视频详见[赤川鹤鸣_Channel - 你考不过我你信不信？😰统计学告诉你高考成绩的真相](https://www.bilibili.com/video/BV19AjV6iE9w)
+> Github 仓库：[AkagawaTsurunaki - GaoKaoStat 高考成绩统计分析](https://github.com/AkagawaTsurunaki/GaoKaoStat)
+>
+> Bilibili 视频：[赤川鹤鸣_Channel - 你考不过我你信不信？😰统计学告诉你高考成绩的真相](https://www.bilibili.com/video/BV19AjV6iE9w)
 
 ## 历年数据
 
@@ -40,7 +42,7 @@ uv sync
 uv run main.py
 ```
 
-看到 `Done` 出现则完成。
+当终端上出现 `Done` ，则完成。
 
 ## 引用我们
 
