@@ -5,22 +5,26 @@ from typing import List
 from matplotlib import pyplot as plt, ticker
 from matplotlib.axes import Axes
 import numpy as np
+from adjustText import adjust_text
 
 from stat_analyse import ScoreStat, group_by_subject_sort_by_province
-plt.rcParams['font.family'] = ["DingTalk JinBuTi"] #, 'SimHei', 'Noto Sans CJK JP', 'Noto Sans', 'DejaVu Sans']
+
+# 默认用的是钉钉进步体，在这可以换成你自己的，NotoSans 字体有些奇怪但是也能看懂
+plt.rcParams['font.family'] = ["DingTalk JinBuTi", 'SimHei', 'Noto Sans CJK JP', 'Noto Sans', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 COLOR_PHYSICS = "#0095ff"
 COLOR_HISTORY = '#ff6600'
 COLOR_OTHER = '#10910b'
 
-def draw_distribute(ax: Axes, data: ScoreStat, color: str, show_score_lines: bool = False):
+def draw_distribute(ax: Axes, data: ScoreStat, color: str, show_score_lines: bool = False, title:str=None):
     ax.bar(data.scores, data.num_people,
            width=1.0, color=color, edgecolor='none')
-    if data.subject:
-        title = f'{data.province}({data.subject})'
-    else:
-        title = data.province
+    if not title:
+        if data.subject:
+            title = f'{data.province}({data.subject})'
+        else:
+            title = data.province
     ax.set_title(title)
     upper = 900 if data.province == '海南' else 750
     lower = 100 if data.province  == '海南' else 0
@@ -46,9 +50,9 @@ def draw_distribute(ax: Axes, data: ScoreStat, color: str, show_score_lines: boo
     label = "\n".join(labels)
     ax.set_xlabel(label, fontsize=8)
 
-def draw_single(data: ScoreStat):
-    fig, axs = plt.subplots(1, 1, figsize=(16, 12))
-    draw_distribute(axs, data, COLOR_OTHER)
+def draw_single(data: ScoreStat, title: str = None):
+    fig, axs = plt.subplots(1, 1, figsize=(3, 3))
+    draw_distribute(axs, data, COLOR_OTHER,title=title)
     plt.savefig(f'1.png', dpi=1200, bbox_inches='tight')
     plt.tight_layout()
     plt.close()
@@ -81,7 +85,7 @@ def draw_dist_plot(data_list: List[ScoreStat]):
 
 # x軸是本科线-均值差，y軸是本科线-专科线
 def draw_scatter_plot(data_list: List[ScoreStat]):
-    fig, ax = plt.subplots(figsize=(10, 9))
+    fig, ax = plt.subplots(figsize=(8, 6))
     phy, his, other = group_by_subject_sort_by_province(data_list)
     point_size = 300
 
@@ -121,11 +125,18 @@ def draw_scatter_plot(data_list: List[ScoreStat]):
                  color="#acacac", alpha=0.5, linewidth=0.8)
 
     # 物理/历史画圆点
+    texts = []
     for i, p in enumerate(phy):
-        ax.annotate(p.province, (x_arr_p[i], y_arr_p[i]))
+        texts.append(plt.text(x_arr_p[i], y_arr_p[i], p.province, fontsize=9))
     for i, h in enumerate(his):
-        ax.annotate(h.province, (x_arr_h[i], y_arr_h[i]))
-        
+        texts.append(plt.text(x_arr_h[i], y_arr_h[i], h.province, fontsize=9))
+    adjust_text(
+        texts,
+        arrowprops=dict(arrowstyle="->", color="#3a3a3a", lw=0.5),
+        expand_points=(0, 1.5),
+        force_text=(0.8, 0.8),
+        lim=1000
+    )
     delta_y = np.array(y_arr_h) - np.array(y_arr_p) 
     delta_x = np.array(x_arr_h) - np.array(x_arr_p)
     xuefeng = delta_y / delta_x

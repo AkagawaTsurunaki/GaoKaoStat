@@ -10,12 +10,11 @@ def main():
     # path_list = [Path('./data/江西_2021_历史类.csv')]
     result = run_stat_tasks(path_list)
     # compare_num_people(result)
-    # comapre_cvm(result)
     # compare_phyhis_ratio(result)
     # compare_other_index(result)
-    # draw_single(result[0])
-    # draw_dist_plot(result)
-    draw_scatter_plot(result)
+    # draw_single(result[0], title="2021年 江西(文科)")
+    draw_dist_plot(result)
+    # draw_scatter_plot(result)
     # draw_scatter_plot(result)
     # compare_skewness(result)
 

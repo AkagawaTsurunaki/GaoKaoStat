@@ -2,7 +2,6 @@ import concurrent
 import concurrent.futures
 from dataclasses import dataclass
 import math
-import multiprocessing
 from pathlib import Path
 import time
 from typing import List, Tuple, Union
@@ -30,32 +29,9 @@ class ScoreStat:
     kurtosis: float
     abci: int  # 本人提出的“绝对独木桥指标”/“一分千人指标”，提高一分，干掉千人，即一分一段表中超过1000人的分数线有多少个。
     bci: int
-    cvm: float  # Cramér–von Mises 统计量，不用 Anderson–Darling 因为它的权重在尾部很敏感
-    cvm_p_value: float  # 这个统计量的 p 值，用于假设检验的
     levelA: int | None
     levelB: int | None
     description: str | None
-
-
-def cramer_von_mises_statistic(data: np.ndarray, lower=0, upper=750):
-    # rng = np.random.default_rng()
-    # if data.size > 50_000:
-    #     data = rng.choice(data, size=50_000, replace=False)
-    #
-    # loc_hat = np.mean(data)
-    # scale_hat = np.std(data, ddof=1)
-    #
-    # a = (lower - loc_hat) / scale_hat
-    # b = (upper - loc_hat) / scale_hat
-    #
-    # result = stats.goodness_of_fit(
-    #     dist=stats.truncnorm,
-    #     data=data,
-    #     statistic='cvm',
-    #     n_mc_samples=999,          # 999 次模拟已足够稳定，显著提速
-    #     known_params={'a': a, 'b': b},  # 截尾点固定，只估计 loc/scale
-    # )
-    return 0, 0
 
 
 def bowley_skewness(data):
@@ -65,7 +41,8 @@ def bowley_skewness(data):
     s_q = (q3 + q1 - 2 * q2) / (q3 - q1)
     return s_q
 
-
+# ign_bound 表示会忽略整个表格中第一行数据和最后一行数据
+# 这个对偏度和峰度的影响比较重要
 def run_stats(csv_path: Union[Path, str], ign_bound: bool = True):
     print(f"Processing: {csv_path}")
     csv_path = Path(csv_path)
@@ -132,14 +109,12 @@ def run_stats(csv_path: Union[Path, str], ign_bound: bool = True):
         kurtosis=kurt,
         abci=int(abci),
         bci=int(bci),
-        cvm=0,
-        cvm_p_value=0,
         description=desc
     )
 
 
 def group_by_subject_sort_by_province(stat_list: List[ScoreStat]) -> Tuple[
-    List[ScoreStat], List[ScoreStat], List[ScoreStat]]:
+        List[ScoreStat], List[ScoreStat], List[ScoreStat]]:
     phy, his, other = [], [], []
     for data in stat_list:
         if data.subject == "物理类":
@@ -193,6 +168,7 @@ def compare_num_people(stat_list: List[ScoreStat]):
 
     total = sum([data.total for data in stat_list])
     print(f'所有省市的总人数：{total}')
+
 
 def compare_other_index(stat_list: List[ScoreStat]):
     phy, his, _ = group_by_subject_sort_by_province(stat_list)
@@ -297,26 +273,6 @@ def compare_moment(stat_list: List[ScoreStat]):
         print(f'{i + 1} {data.province}  {data.kurtosis:.4f}')
 
 
-def comapre_cvm(stat_list: List[ScoreStat]):
-    phy, his, other = group_by_subject_sort_by_province(stat_list)
-
-    phy = sorted(phy, key=lambda s: s.cvm_p_value, reverse=True)
-    his = sorted(his, key=lambda s: s.cvm_p_value, reverse=True)
-    other = sorted(other, key=lambda s: s.cvm_p_value, reverse=True)
-
-    for i, data in enumerate(phy):
-        print(
-            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
-
-    for i, data in enumerate(his):
-        print(
-            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
-
-    for i, data in enumerate(other):
-        print(
-            f'{i + 1} {data.province}  cvm={data.cvm:.4f} p_value={data.cvm_p_value:.4f}')
-
-
 def run_stat_tasks(path_list: List[Path]):
     result = []
     start = time.time()
@@ -327,7 +283,7 @@ def run_stat_tasks(path_list: List[Path]):
     print(f"Use {end - start:.2f} seconds")
     return result
 
-
+# Linux 系统里这个运行效率更高，因为进程创建的开销比较小（大概）
 def run_stat_tasks_with_multiprocess(path_list: List[Path]):
     start = time.time()
     args = [str(path) for path in path_list]
