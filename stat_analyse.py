@@ -215,7 +215,8 @@ def compare_moment(stat_list: List[ScoreStat]):
 
     # 按照平均值排序
     phy_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
-    his_mean = sorted(phy, key=lambda s: s.mean, reverse=True)
+    # 感谢 B 站用户[海冬青ilex](https://space.bilibili.com/88808151)发现此问题
+    his_mean = sorted(his, key=lambda s: s.mean, reverse=True)
     print('------均值排行（物理类）------')
     for i, data in enumerate(phy_mean):
         print(f'{i + 1} {data.province}  {data.mean:.4f}')
